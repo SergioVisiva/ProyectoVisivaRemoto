@@ -1,30 +1,24 @@
-from st_aggrid import AgGrid, GridOptionsBuilder
 import pandas as pd
-import streamlit as st
+import plotly.express as px
 
-# Data ejemplo
+# Datos de ejemplo
 data = {
-    'ult_asesor': ['Juan', 'Juan', 'Ana', 'Ana'],
-    'respuesta_ult_contacto': ['OK', 'Pendiente', 'OK', 'Pendiente'],
-    'dia_mes_ultima_accion': ['2025-06-01', '2025-06-02', '2025-06-01', '2025-06-02'],
-    'id_cliente': [1, 2, 3, 4]
+    'País': ['Perú', 'Perú', 'Perú', 'Chile', 'Chile', 'Chile'],
+    'Departamento': ['Lima', 'Cusco', 'Arequipa', 'Santiago', 'Valparaíso', 'Antofagasta'],
+    'Año': [2022, 2022, 2022, 2022, 2022, 2022],
+    'Exportaciones': [1000, 500, 700, 1200, 800, 600]
 }
 df = pd.DataFrame(data)
 
-gb = GridOptionsBuilder.from_dataframe(df)
+# Pivot para tener los años como columnas
+pivot_df = df.pivot_table(index=['País', 'Departamento'], columns='Año', values='Exportaciones', aggfunc='sum').reset_index()
 
-# Configurar filas agrupadas
-gb.configure_column("ult_asesor", rowGroup=True, hide=True)
-gb.configure_column("respuesta_ult_contacto", rowGroup=True, hide=True)
-
-# Configurar columna pivot (columnas dinámicas)
-gb.configure_column("dia_mes_ultima_accion", pivot=True)
-
-# Configurar valor a contar
-gb.configure_column("id_cliente", aggFunc='count')
-
-gb.configure_default_column(groupable=True, enableRowGroup=True, enablePivot=True, enableValue=True)
-
-gridOptions = gb.build()
-
-AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=True)
+# Tabla jerárquica interactiva con expansión
+fig = px.treemap(
+    df,
+    path=['País', 'Departamento'],
+    values='Exportaciones',
+    color='Exportaciones',
+    title='Exportaciones por País y Departamento'
+)
+fig.show()

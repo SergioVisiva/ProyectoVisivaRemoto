@@ -1,62 +1,52 @@
 import pandas as pd
 import streamlit as st
-import sqlite3  
-from st_aggrid import AgGrid, GridOptionsBuilder
-import streamlit as st
-import pandas as pd
+import sqlite3
+
+def color_semaforo(val):
+    if val > 5:
+        color = 'background-color: lightgreen'
+    elif val > 2:
+        color = 'background-color: yellow'
+    else:
+        color = 'background-color: lightcoral'
+    return color
 
 def obtener_datos_filtrados_por_equipo(con, pagina):
+    st.title(f"Reporte de: {pagina}")
 
-
-    # Título dinámico según la página
-    st.title(f"Reporte de : {pagina}")
-
-    # Obtener equipos disponibles
     status_query = "SELECT DISTINCT Equipo FROM tb_toques"
     df_status = pd.read_sql_query(status_query, con)
     opciones_equipo = df_status['Equipo'].tolist()
 
-    # Selector en la barra lateral
     seleccion = st.selectbox("Filtrar por Equipo", opciones_equipo)
 
-    # Query filtrado
     query = """
-    SELECT * FROM tb_toques
+    SELECT *
+    FROM tb_toques
     WHERE Equipo = ?
     """
     df_filtrado = pd.read_sql_query(query, con, params=(seleccion,))
 
-    # Mostrar resultados
-    #st.dataframe(df_filtrado)
-    
-
-
-    # Configuración de AgGrid
-    gb = GridOptionsBuilder.from_dataframe(df_filtrado)
-
-    # AREA DE FILAS (jerarquía): Producto y Subproducto
-    gb.configure_column("ult_asesor", rowGroup=True, hide=True)
-    gb.configure_column("respuesta_ult_contacto", rowGroup=True, hide=True)
-
-    # 🔸 AREA DE COLUMNAS: Zona
-    gb.configure_column("dia_mes_ultima_accion", pivot=True)
-
-    # 🔸 AREA DE VALORES: Ventas
-    gb.configure_column("id_cliente", aggFunc="count")
-
-    # Otras opciones
-    gb.configure_default_column(groupable=True, enableValue=True, enableRowGroup=True, enablePivot=True)
-
-    gridOptions = gb.build()
-
-    # Mostrar tabla dinámica
-    AgGrid(
+    tabla_pivot = pd.pivot_table(
         df_filtrado,
-        gridOptions=gridOptions,
-        enable_enterprise_modules=True,
-        fit_columns_on_grid_load=True
-    )
+        index=["ult_asesor", "respuesta_ult_contacto"],
+        columns="dia_mes_ultima_accion",
+        values="id_cliente",
+        aggfunc="count",
+        fill_value=0
+    ).reset_index()
 
-    
+    st.subheader("📊 Tabla dinámica de contactos por día")
 
-    return df_filtrado
+    columnas_dias = tabla_pivot.columns[2:]
+
+    tabla_estilizada = tabla_pivot.style.applymap(color_semaforo, subset=columnas_dias)
+
+    st.dataframe(tabla_estilizada, use_container_width=True)
+
+    return tabla_pivot
+
+if __name__ == "__main__":
+    con = sqlite3.connect("tu_basededatos.sqlite")  # Cambia por tu BD
+    pagina = "Equipo XYZ"
+    obtener_datos_filtrados_por_equipo(con, pagina)
