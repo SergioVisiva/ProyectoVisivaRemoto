@@ -1,29 +1,27 @@
 import streamlit as st
-import pandas as pd
-import sqlitecloud
 import Pipeline as pv 
+import configuracion as cv
+import hsm as hsm
 
-# Conexión a la BD SQLite Cloud
-con_sql = sqlitecloud.connect(
-    "sqlitecloud://cvixcqxfnz.g3.sqlite.cloud:8860/dbVisiva?apikey=Duup7ZbjbIH5w0TFTj9MewoF4GnD8KtGayXaDDOEy18"
-)
-
+# BARRA LATERAL
 st.sidebar.header("Navegación")
-
-# Opciones del menú con emojis
 opciones = ["📋 Pipeline", "📈 Base Gestionable", "🗂️ Bases HSM"]
-
-# Selector tipo radio para que siempre se vean las opciones y se mantenga el estado
 pagina = st.sidebar.radio("Selecciona la página:", opciones)
-
-# Guardar la selección en session_state
 st.session_state.pagina = pagina
 
 
-if pagina == "📋 Pipeline":
-    pv.obtener_datos_filtrados_por_equipo(con_sql, pagina)
+#--- PANTALLA
+if pagina == "🗂️ Bases HSM":
+    hsm.app_hsm()
 
 
-con_sql.close()
+# Solo si estamos en Pipeline
+elif pagina == "📋 Pipeline":
+    une = st.radio("Seleccione la UNE", ["UCAL", "TLS", "CERTUS"], horizontal=True)
+    
+    pv.obtener_datos_filtrados_por_equipo(cv.con_sql, une)
+    # Selector principal al centro superior
+    
+
 
 

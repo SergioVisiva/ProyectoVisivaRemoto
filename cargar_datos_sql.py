@@ -18,7 +18,7 @@ def convert_date_columns(df, date_columns):
 def clear_table(conn, table_name):
     conn.execute(f"DELETE FROM {table_name}")
 
-def insert_rows_fast(df, table_name, conn, chunk_size=4000):
+def insert_rows_fast(df, table_name, conn, chunk_size=3000):
     cols = list(df.columns)
     insert_sql = f"INSERT INTO {table_name} ({', '.join(cols)}) VALUES ({','.join(['?'] * len(cols))})"
     data_iter = list(df.itertuples(index=False, name=None))
